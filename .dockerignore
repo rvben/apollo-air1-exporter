@@ -1,0 +1,7 @@
+target/
+Dockerfile
+.dockerignore
+*.md
+test_sensors.py
+.git/
+.gitignore

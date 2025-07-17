@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  apollo-air1-exporter:
+    build: .
+    image: apollo-air1-exporter
+    container_name: apollo-air1-exporter
+    restart: unless-stopped
+    ports:
+      - "9926:9926"
+    environment:
+      - APOLLO_HOSTS=http://192.168.1.100,http://192.168.1.101
+      - APOLLO_NAMES=Living Room,Bedroom
+      - APOLLO_POLL_INTERVAL=30
+      - APOLLO_LOG_LEVEL=info
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    external: true
