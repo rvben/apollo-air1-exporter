@@ -33,17 +33,17 @@ pub struct SensorValue {
     pub name: String,
 }
 
-// Known Apollo Air-1 sensors
+// Known Apollo Air-1 sensors - using ESPHome sensor names
 const KNOWN_SENSORS: &[(&str, &str)] = &[
     ("co2", "CO2"),
-    ("temperature", "Temperature"),
-    ("humidity", "Humidity"),
-    ("pm_1_0", "PM1.0"),
-    ("pm_2_5", "PM2.5"),
-    ("pm_10_0", "PM10"),
-    ("voc", "VOC"),
-    ("nox", "NOx"),
-    ("pressure", "Pressure"),
+    ("sen55_temperature", "Temperature"),
+    ("sen55_humidity", "Humidity"),
+    ("pm__1_m_weight_concentration", "PM1.0"),
+    ("pm__2_5_m_weight_concentration", "PM2.5"),
+    ("pm__10_m_weight_concentration", "PM10"),
+    ("sen55_voc", "VOC"),
+    ("sen55_nox", "NOx"),
+    ("dps310_pressure", "Pressure"),
     ("illuminance", "Illuminance"),
     ("esp_temperature", "ESP Temperature"),
     ("rssi", "WiFi RSSI"),
@@ -234,10 +234,10 @@ mod tests {
 
         // Mock temperature sensor
         Mock::given(method("GET"))
-            .and(path("/sensor/temperature"))
+            .and(path("/sensor/sen55_temperature"))
             .respond_with(ResponseTemplate::new(200).set_body_string(
                 r#"{
-                "id": "sensor-temperature",
+                "id": "sensor-sen55_temperature",
                 "value": 22.5,
                 "state": "22.5 °C"
             }"#,
@@ -265,7 +265,7 @@ mod tests {
         assert_eq!(co2.unit, "ppm");
         assert_eq!(co2.name, "CO2");
 
-        let temp = status.sensors.get("temperature").unwrap();
+        let temp = status.sensors.get("sen55_temperature").unwrap();
         assert_eq!(temp.value, 22.5);
         assert_eq!(temp.unit, "°C");
         assert_eq!(temp.name, "Temperature");

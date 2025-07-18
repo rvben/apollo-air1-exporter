@@ -167,42 +167,42 @@ impl Metrics {
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "pm_1_0" => {
+                "pm__1_m_weight_concentration" => {
                     self.pm1_0_ugm3
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "pm_2_5" => {
+                "pm__2_5_m_weight_concentration" => {
                     self.pm2_5_ugm3
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "pm_10_0" => {
+                "pm__10_m_weight_concentration" => {
                     self.pm10_0_ugm3
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "voc" => {
+                "sen55_voc" => {
                     self.voc_index
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "nox" => {
+                "sen55_nox" => {
                     self.nox_index
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "temperature" => {
+                "sen55_temperature" => {
                     self.temperature_celsius
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "humidity" => {
+                "sen55_humidity" => {
                     self.humidity_percent
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                 }
-                "pressure" => {
+                "dps310_pressure" => {
                     self.pressure_hpa
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
@@ -283,7 +283,7 @@ mod tests {
             },
         );
         sensors.insert(
-            "pm_2_5".to_string(),
+            "pm__2_5_m_weight_concentration".to_string(),
             SensorValue {
                 value: 12.5,
                 unit: "µg/m³".to_string(),
