@@ -267,7 +267,7 @@ mod tests {
             },
         );
         sensors.insert(
-            "temperature".to_string(),
+            "sen55_temperature".to_string(),
             SensorValue {
                 value: 22.5,
                 unit: "°C".to_string(),
@@ -275,7 +275,7 @@ mod tests {
             },
         );
         sensors.insert(
-            "humidity".to_string(),
+            "sen55_humidity".to_string(),
             SensorValue {
                 value: 45.0,
                 unit: "%".to_string(),
