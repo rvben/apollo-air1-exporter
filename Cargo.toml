@@ -1,6 +1,6 @@
 [package]
 name = "apollo-air1-exporter"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2024"
 authors = ["Ruben J. Jongejan <ruben.jongejan@gmail.com>"]
 description = "Prometheus exporter for Apollo AIR-1 air quality monitors"
