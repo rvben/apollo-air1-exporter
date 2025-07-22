@@ -1,5 +1,8 @@
-# Build stage
-FROM rust:1.88 AS builder
+# Build stage - use the target platform's rust image
+FROM rust:1.88-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache musl-dev
 
 WORKDIR /app
 
@@ -9,27 +12,41 @@ COPY Cargo.toml Cargo.lock ./
 # Copy source code
 COPY src ./src
 
-# Build for release
-RUN cargo build --release
+# Build the application for the native platform
+RUN cargo build --release --target $(rustc -vV | sed -n 's/host: //p') && \
+    cp target/$(rustc -vV | sed -n 's/host: //p')/release/apollo-air1-exporter /app/apollo-air1-exporter
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM alpine:3.21
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# OCI labels for GitHub Container Registry
+LABEL org.opencontainers.image.source=https://github.com/rvben/apollo-air1-exporter
+LABEL org.opencontainers.image.description="Prometheus exporter for Apollo AIR-1 air quality monitors"
+LABEL org.opencontainers.image.licenses=MIT
 
-# Copy the binary from builder
-COPY --from=builder /app/target/release/apollo-air1-exporter /usr/local/bin/apollo-air1-exporter
+# Install runtime dependencies
+RUN apk add --no-cache ca-certificates
 
 # Create non-root user
-RUN useradd -m -u 1000 -s /bin/bash exporter
+RUN addgroup -g 1000 exporter && \
+    adduser -D -u 1000 -G exporter exporter
 
+# Copy the binary from builder
+COPY --from=builder /app/apollo-air1-exporter /usr/local/bin/apollo-air1-exporter
+
+# Change ownership
+RUN chown exporter:exporter /usr/local/bin/apollo-air1-exporter
+
+# Switch to non-root user
 USER exporter
 
 # Expose metrics port
 EXPOSE 9926
 
+# Set default environment variables
+ENV LOG_LEVEL=info
+ENV POLL_INTERVAL=60
+ENV METRICS_PORT=9926
+
 # Run the exporter
-ENTRYPOINT ["apollo-air1-exporter"]
+ENTRYPOINT ["/usr/local/bin/apollo-air1-exporter"]

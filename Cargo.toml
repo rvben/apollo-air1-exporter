@@ -6,6 +6,12 @@ authors = ["Ruben J. Jongejan <ruben.jongejan@gmail.com>"]
 description = "Prometheus exporter for Apollo AIR-1 air quality monitors"
 license = "MIT"
 repository = "https://github.com/rvben/apollo-air1-exporter"
+homepage = "https://github.com/rvben/apollo-air1-exporter"
+documentation = "https://docs.rs/apollo-air1-exporter"
+keywords = ["prometheus", "exporter", "apollo", "air-quality", "monitoring"]
+categories = ["command-line-utilities", "web-programming"]
+readme = "README.md"
+exclude = ["target/", ".github/", "*.md"]
 
 [dependencies]
 # Async runtime

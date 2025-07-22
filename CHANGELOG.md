@@ -7,23 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.1] - 2025-01-17
+### Added
+- Dependabot configuration for automated dependency updates
+- Enhanced Cargo.toml metadata for better crates.io discoverability
+
+## [0.0.6] - 2025-01-22
 
 ### Added
-- Initial release of Apollo Air-1 Prometheus Exporter
-- Support for multiple Apollo Air-1 devices
-- Auto-discovery of available sensors
-- Metrics for CO2, temperature, humidity, and other air quality indicators
-- Docker support with multi-architecture builds (amd64, arm64, armv7)
-- Configurable polling interval and timeout
+- OCI labels to Dockerfile for GitHub Container Registry integration
+- Make release target for automated release process
+- Multi-platform Docker builds (linux/amd64, linux/arm64, linux/arm/v7)
+
+### Changed
+- Standardized user naming in Docker container to 'exporter'
+- Updated Docker build to use musl-based Alpine for better portability
+- Improved release workflow to commit Cargo.lock automatically
+
+### Fixed
+- Cargo.lock commit issues in release pipeline
+- Docker architecture mismatch in builds
+
+## [0.0.5] - 2025-01-15
+
+### Added
+- Initial Prometheus exporter for Apollo AIR-1 air quality monitors
+- AQI (Air Quality Index) calculations based on EPA standards
+- Support for multiple device monitoring
 - Health check endpoint
-- Comprehensive logging with configurable levels
+- Docker support with multi-stage builds
+- GitHub Actions CI/CD pipeline
 
 ### Features
-- Graceful handling of offline devices
-- Custom device naming support
-- Environment variable configuration
-- Prometheus-compatible metrics endpoint
-
-[Unreleased]: https://github.com/rvben/apollo-air1-exporter/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/rvben/apollo-air1-exporter/releases/tag/v0.0.1
+- Real-time air quality monitoring
+- PM2.5, PM10, and overall AQI metrics
+- Device status tracking
+- Configurable polling intervals
+- TLS-enabled HTTP client
