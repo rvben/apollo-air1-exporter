@@ -54,10 +54,47 @@ jobs:
     - name: Publish to crates.io
       run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
 
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: test
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Changes
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            
+            ## Installation
+            
+            ### Docker
+            ```bash
+            docker pull ${{ secrets.DOCKER_USERNAME }}/apollo-air1-exporter:${{ github.ref_name }}
+            # or
+            docker pull ghcr.io/${{ github.repository_owner }}/apollo-air1-exporter:${{ github.ref_name }}
+            ```
+            
+            ### Cargo
+            ```bash
+            cargo install apollo-air1-exporter --version ${{ github.ref_name }}
+            ```
+            
+            ### Binary Downloads
+            Pre-built binaries are available below for Linux (amd64, arm64, armv7).
+
   build-binaries:
     name: Build Binaries
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, create-release]
     strategy:
       matrix:
         include:
@@ -166,39 +203,3 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  create-release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [test, publish-crates, build-binaries, docker]
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          body: |
-            ## Changes
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-            
-            ## Installation
-            
-            ### Docker
-            ```bash
-            docker pull ${{ secrets.DOCKER_USERNAME }}/apollo-air1-exporter:${{ github.ref_name }}
-            # or
-            docker pull ghcr.io/${{ github.repository_owner }}/apollo-air1-exporter:${{ github.ref_name }}
-            ```
-            
-            ### Cargo
-            ```bash
-            cargo install apollo-air1-exporter --version ${{ github.ref_name }}
-            ```
-            
-            ### Binary Downloads
-            Pre-built binaries are available below for Linux (amd64, arm64, armv7).
