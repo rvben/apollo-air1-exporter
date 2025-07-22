@@ -17,7 +17,7 @@ RUN cargo build --release --target $(rustc -vV | sed -n 's/host: //p') && \
     cp target/$(rustc -vV | sed -n 's/host: //p')/release/apollo-air1-exporter /app/apollo-air1-exporter
 
 # Runtime stage
-FROM alpine:3.21
+FROM alpine:3.22
 
 # OCI labels for GitHub Container Registry
 LABEL org.opencontainers.image.source=https://github.com/rvben/apollo-air1-exporter
