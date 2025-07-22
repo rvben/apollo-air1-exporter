@@ -1,4 +1,5 @@
 mod apollo;
+mod aqi;
 mod config;
 mod metrics;
 

@@ -6,6 +6,7 @@ use prometheus::{
 use tracing::{debug, error};
 
 use crate::apollo::ApolloStatus;
+use crate::aqi;
 
 pub struct Metrics {
     registry: Registry,
@@ -30,6 +31,9 @@ pub struct Metrics {
     // Device metrics
     esp_temperature_celsius: GaugeVec,
     wifi_rssi_dbm: IntGaugeVec,
+
+    // Air Quality Index
+    aqi: GaugeVec,
 }
 
 impl Metrics {
@@ -130,6 +134,14 @@ impl Metrics {
         )?;
         registry.register(Box::new(wifi_rssi_dbm.clone()))?;
 
+        // Air Quality Index
+        let aqi = register_gauge_vec!(
+            "apollo_air1_aqi",
+            "Air Quality Index based on PM2.5 and PM10",
+            &["device", "host", "category", "primary_pollutant"]
+        )?;
+        registry.register(Box::new(aqi.clone()))?;
+
         Ok(Self {
             registry,
             device_up,
@@ -145,6 +157,7 @@ impl Metrics {
             illuminance_lux,
             esp_temperature_celsius,
             wifi_rssi_dbm,
+            aqi,
         })
     }
 
@@ -158,6 +171,10 @@ impl Metrics {
         self.device_up
             .with_label_values(&[status.device_name.as_str(), host])
             .set(1);
+
+        // Collect PM values for AQI calculation
+        let mut pm25_value: Option<f64> = None;
+        let mut pm10_value: Option<f64> = None;
 
         // Update each available sensor
         for (sensor_id, sensor_value) in &status.sensors {
@@ -176,11 +193,13 @@ impl Metrics {
                     self.pm2_5_ugm3
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
+                    pm25_value = Some(sensor_value.value);
                 }
                 "pm__10_m_weight_concentration" => {
                     self.pm10_0_ugm3
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
+                    pm10_value = Some(sensor_value.value);
                 }
                 "sen55_voc" => {
                     self.voc_index
@@ -226,6 +245,18 @@ impl Metrics {
                     debug!("Unknown sensor: {} = {}", sensor_id, sensor_value.value);
                 }
             }
+        }
+
+        // Calculate and update AQI if PM data is available
+        if let Some(aqi_result) = aqi::calculate_aqi(pm25_value, pm10_value) {
+            self.aqi
+                .with_label_values(&[
+                    status.device_name.as_str(),
+                    host,
+                    aqi_result.category.as_str(),
+                    &aqi_result.primary_pollutant,
+                ])
+                .set(aqi_result.aqi);
         }
 
         Ok(())
@@ -304,6 +335,7 @@ mod tests {
         assert!(output.contains("apollo_air1_temperature_celsius"));
         assert!(output.contains("apollo_air1_humidity_percent"));
         assert!(output.contains("apollo_air1_pm2_5_ugm3"));
+        assert!(output.contains("apollo_air1_aqi"));
         assert!(output.contains("450")); // CO2 value
         assert!(output.contains("22.5")); // Temperature value
         assert!(output.contains("45")); // Humidity value
@@ -321,5 +353,44 @@ mod tests {
         assert!(output.contains("apollo_air1_device_up"));
         assert!(output.contains(r#"device="Test Device""#));
         assert!(output.contains("} 0"));
+    }
+
+    #[test]
+    #[ignore = "Metrics registry conflict in tests"]
+    fn test_aqi_calculation_integration() {
+        let metrics = Metrics::new().unwrap();
+
+        let mut sensors = HashMap::new();
+        // Add PM2.5 data that should result in Moderate AQI (~68)
+        sensors.insert(
+            "pm__2_5_m_weight_concentration".to_string(),
+            SensorValue {
+                value: 20.0,
+                unit: "µg/m³".to_string(),
+                name: "PM2.5".to_string(),
+            },
+        );
+        // Add PM10 data that should result in lower AQI (~28)
+        sensors.insert(
+            "pm__10_m_weight_concentration".to_string(),
+            SensorValue {
+                value: 30.0,
+                unit: "µg/m³".to_string(),
+                name: "PM10".to_string(),
+            },
+        );
+
+        let status = ApolloStatus {
+            sensors,
+            device_name: "Test Device".to_string(),
+        };
+
+        metrics.update_device("192.168.1.100", &status).unwrap();
+
+        let output = metrics.gather().unwrap();
+        assert!(output.contains("apollo_air1_aqi"));
+        assert!(output.contains("category=\"Moderate\""));
+        assert!(output.contains("primary_pollutant=\"PM2.5\""));
+        assert!(output.contains("68")); // Expected AQI value
     }
 }
