@@ -19,6 +19,16 @@ pub struct Metrics {
     pm1_0_ugm3: GaugeVec,
     pm2_5_ugm3: GaugeVec,
     pm10_0_ugm3: GaugeVec,
+    pm_0_3_to_1_ugm3: GaugeVec,
+    pm_1_to_2_5_ugm3: GaugeVec,
+    pm_2_5_to_4_ugm3: GaugeVec,
+    pm_4_to_10_ugm3: GaugeVec,
+    carbon_monoxide_ppm: GaugeVec,
+    methane_ppm: GaugeVec,
+    ethanol_ppm: GaugeVec,
+    hydrogen_ppm: GaugeVec,
+    ammonia_ppm: GaugeVec,
+    nitrogen_dioxide_ppm: GaugeVec,
     voc_index: GaugeVec,
     nox_index: GaugeVec,
 
@@ -75,6 +85,76 @@ impl Metrics {
             &["device", "host"]
         )?;
         registry.register(Box::new(pm10_0_ugm3.clone()))?;
+
+        let pm_0_3_to_1_ugm3 = register_gauge_vec!(
+            "apollo_air1_pm_0_3_to_1_ugm3",
+            "PM 0.3 to 1 particulate matter in micrograms per cubic meter",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(pm_0_3_to_1_ugm3.clone()))?;
+
+        let pm_1_to_2_5_ugm3 = register_gauge_vec!(
+            "apollo_air1_pm_1_to_2_5_ugm3",
+            "PM 1 to 2.5 particulate matter in micrograms per cubic meter",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(pm_1_to_2_5_ugm3.clone()))?;
+
+        let pm_2_5_to_4_ugm3 = register_gauge_vec!(
+            "apollo_air1_pm_2_5_to_4_ugm3",
+            "PM 2.5 to 4 particulate matter in micrograms per cubic meter",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(pm_2_5_to_4_ugm3.clone()))?;
+
+        let pm_4_to_10_ugm3 = register_gauge_vec!(
+            "apollo_air1_pm_4_to_10_ugm3",
+            "PM 4 to 10 particulate matter in micrograms per cubic meter",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(pm_4_to_10_ugm3.clone()))?;
+
+        let carbon_monoxide_ppm = register_gauge_vec!(
+            "apollo_air1_carbon_monoxide_ppm",
+            "Carbon Monoxide in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(carbon_monoxide_ppm.clone()))?;
+
+        let methane_ppm = register_gauge_vec!(
+            "apollo_air1_methane_ppm",
+            "Methane in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(methane_ppm.clone()))?;
+
+        let ethanol_ppm = register_gauge_vec!(
+            "apollo_air1_ethanol_ppm",
+            "Ethanol in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(ethanol_ppm.clone()))?;
+
+        let hydrogen_ppm = register_gauge_vec!(
+            "apollo_air1_hydrogen_ppm",
+            "Hydrogen in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(hydrogen_ppm.clone()))?;
+
+        let ammonia_ppm = register_gauge_vec!(
+            "apollo_air1_ammonia_ppm",
+            "Ammonia in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(ammonia_ppm.clone()))?;
+
+        let nitrogen_dioxide_ppm = register_gauge_vec!(
+            "apollo_air1_nitrogen_dioxide_ppm",
+            "Nitrogen Dioxide in parts per million",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(nitrogen_dioxide_ppm.clone()))?;
 
         let voc_index = register_gauge_vec!(
             "apollo_air1_voc_index",
@@ -149,6 +229,16 @@ impl Metrics {
             pm1_0_ugm3,
             pm2_5_ugm3,
             pm10_0_ugm3,
+            pm_0_3_to_1_ugm3,
+            pm_1_to_2_5_ugm3,
+            pm_2_5_to_4_ugm3,
+            pm_4_to_10_ugm3,
+            carbon_monoxide_ppm,
+            methane_ppm,
+            ethanol_ppm,
+            hydrogen_ppm,
+            ammonia_ppm,
+            nitrogen_dioxide_ppm,
             voc_index,
             nox_index,
             temperature_celsius,
@@ -200,6 +290,56 @@ impl Metrics {
                         .with_label_values(&[status.device_name.as_str(), host])
                         .set(sensor_value.value);
                     pm10_value = Some(sensor_value.value);
+                }
+                "pm_0_3_to_1__m" => {
+                    self.pm_0_3_to_1_ugm3
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "pm_1_to_2_5__m" => {
+                    self.pm_1_to_2_5_ugm3
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "pm_2_5_to_4__m" => {
+                    self.pm_2_5_to_4_ugm3
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "pm_4_to_10__m" => {
+                    self.pm_4_to_10_ugm3
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "carbon_monoxide" => {
+                    self.carbon_monoxide_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "methane" => {
+                    self.methane_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "ethanol" => {
+                    self.ethanol_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "hydrogen" => {
+                    self.hydrogen_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "ammonia" => {
+                    self.ammonia_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
+                }
+                "nitrogen_dioxide" => {
+                    self.nitrogen_dioxide_ppm
+                        .with_label_values(&[status.device_name.as_str(), host])
+                        .set(sensor_value.value);
                 }
                 "sen55_voc" => {
                     self.voc_index
