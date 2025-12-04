@@ -48,7 +48,7 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
     
     - name: Build release binary
-      run: make release
+      run: make build
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -72,6 +72,7 @@ jobs:
         context: .
         platforms: linux/amd64
         push: false
+        load: true
         tags: apollo-air1-exporter:ci-test
         cache-from: type=gha
         cache-to: type=gha,mode=max
