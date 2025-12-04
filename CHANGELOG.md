@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.10] - 2025-12-04
+
+### Fixed
+- Update PM2.5 AQI breakpoints to EPA 2024 specification (effective May 6, 2024)
+  - Good: 0-9.0 µg/m³ (was 0-12.0)
+  - Unhealthy: 55.5-125.4 µg/m³ (was 55.5-150.4)
+  - Very Unhealthy: 125.5-225.4 µg/m³ (was 150.5-250.4)
+  - Hazardous: 225.5-325.4 µg/m³ (was 250.5-500.4)
+- AQI metrics not returning to baseline when air quality improves (#16)
+- CI workflow using wrong make target
+
+### Added
+- Per-pollutant sub-AQI metrics (apollo_air1_aqi_pm25, apollo_air1_aqi_pm10)
+- AQI info metric with category labels (apollo_air1_aqi_info)
+- Concentration truncation per EPA spec (PM2.5 to 1 decimal, PM10 to integer)
+- Proper cleanup of stale AQI category labels when air quality changes
+
+### Changed
+- Restructured AQI metrics for proper Prometheus semantics
+- apollo_air1_aqi now only has device/host labels (category moved to info metric)
+
 ## [0.0.7] - 2025-01-23
 
 ### Added
