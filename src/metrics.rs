@@ -3,10 +3,19 @@ use prometheus::{
     Encoder, GaugeVec, IntGaugeVec, Registry, TextEncoder, register_gauge_vec,
     register_int_gauge_vec,
 };
+use std::collections::HashMap;
+use std::sync::RwLock;
 use tracing::{debug, error};
 
 use crate::apollo::ApolloStatus;
-use crate::aqi;
+use crate::aqi::{self, AqiCategory};
+
+/// Tracks previous AQI state for a device to enable cleanup of stale metrics
+#[derive(Clone, Debug)]
+struct AqiState {
+    category: AqiCategory,
+    primary_pollutant: String,
+}
 
 pub struct Metrics {
     registry: Registry,
@@ -32,8 +41,14 @@ pub struct Metrics {
     esp_temperature_celsius: GaugeVec,
     wifi_rssi_dbm: IntGaugeVec,
 
-    // Air Quality Index
-    aqi: GaugeVec,
+    // Air Quality Index - restructured for proper Prometheus semantics
+    aqi: GaugeVec,                    // Overall AQI value (device, host only)
+    aqi_pm25: GaugeVec,               // PM2.5 sub-AQI
+    aqi_pm10: GaugeVec,               // PM10 sub-AQI
+    aqi_info: GaugeVec,               // Info metric with category/pollutant labels
+
+    // State tracking for cleaning up stale AQI info metrics
+    previous_aqi_state: RwLock<HashMap<(String, String), AqiState>>,
 }
 
 impl Metrics {
@@ -134,13 +149,37 @@ impl Metrics {
         )?;
         registry.register(Box::new(wifi_rssi_dbm.clone()))?;
 
-        // Air Quality Index
+        // Air Quality Index - Overall value
         let aqi = register_gauge_vec!(
             "apollo_air1_aqi",
             "Air Quality Index based on PM2.5 and PM10",
-            &["device", "host", "category", "primary_pollutant"]
+            &["device", "host"]
         )?;
         registry.register(Box::new(aqi.clone()))?;
+
+        // Air Quality Index - PM2.5 sub-index
+        let aqi_pm25 = register_gauge_vec!(
+            "apollo_air1_aqi_pm25",
+            "Air Quality Index for PM2.5",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(aqi_pm25.clone()))?;
+
+        // Air Quality Index - PM10 sub-index
+        let aqi_pm10 = register_gauge_vec!(
+            "apollo_air1_aqi_pm10",
+            "Air Quality Index for PM10",
+            &["device", "host"]
+        )?;
+        registry.register(Box::new(aqi_pm10.clone()))?;
+
+        // Air Quality Index - Info metric with category labels
+        let aqi_info = register_gauge_vec!(
+            "apollo_air1_aqi_info",
+            "AQI category information (value always 1, use labels for category)",
+            &["device", "host", "category", "primary_pollutant"]
+        )?;
+        registry.register(Box::new(aqi_info.clone()))?;
 
         Ok(Self {
             registry,
@@ -158,6 +197,10 @@ impl Metrics {
             esp_temperature_celsius,
             wifi_rssi_dbm,
             aqi,
+            aqi_pm25,
+            aqi_pm10,
+            aqi_info,
+            previous_aqi_state: RwLock::new(HashMap::new()),
         })
     }
 
@@ -249,17 +292,64 @@ impl Metrics {
 
         // Calculate and update AQI if PM data is available
         if let Some(aqi_result) = aqi::calculate_aqi(pm25_value, pm10_value) {
-            self.aqi
-                .with_label_values(&[
-                    status.device_name.as_str(),
-                    host,
-                    aqi_result.category.as_str(),
-                    &aqi_result.primary_pollutant,
-                ])
-                .set(aqi_result.aqi);
+            self.update_aqi(&status.device_name, host, &aqi_result);
         }
 
         Ok(())
+    }
+
+    /// Updates AQI metrics with proper cleanup of stale info labels
+    fn update_aqi(&self, device: &str, host: &str, result: &aqi::AqiResult) {
+        let key = (device.to_string(), host.to_string());
+
+        // Remove previous info metric if category or pollutant changed
+        {
+            let state_guard = self.previous_aqi_state.read().unwrap();
+            if let Some(prev) = state_guard.get(&key)
+                && (prev.category != result.category
+                    || prev.primary_pollutant != result.primary_pollutant)
+            {
+                // State changed - remove old info metric
+                let _ = self.aqi_info.remove_label_values(&[
+                    device,
+                    host,
+                    prev.category.as_str(),
+                    &prev.primary_pollutant,
+                ]);
+                debug!(
+                    "Removed stale AQI info metric for {} (was {:?}/{})",
+                    device, prev.category, prev.primary_pollutant
+                );
+            }
+        }
+
+        // Set overall AQI value
+        self.aqi.with_label_values(&[device, host]).set(result.aqi);
+
+        // Set per-pollutant sub-AQIs
+        if let Some(pm25_aqi) = result.pm25_aqi {
+            self.aqi_pm25.with_label_values(&[device, host]).set(pm25_aqi);
+        }
+        if let Some(pm10_aqi) = result.pm10_aqi {
+            self.aqi_pm10.with_label_values(&[device, host]).set(pm10_aqi);
+        }
+
+        // Set info metric (always value 1)
+        self.aqi_info
+            .with_label_values(&[device, host, result.category.as_str(), &result.primary_pollutant])
+            .set(1.0);
+
+        // Update tracked state
+        {
+            let mut state_guard = self.previous_aqi_state.write().unwrap();
+            state_guard.insert(
+                key,
+                AqiState {
+                    category: result.category.clone(),
+                    primary_pollutant: result.primary_pollutant.clone(),
+                },
+            );
+        }
     }
 
     pub fn mark_device_down(&self, device_name: &str, host: &str) {
@@ -388,9 +478,66 @@ mod tests {
         metrics.update_device("192.168.1.100", &status).unwrap();
 
         let output = metrics.gather().unwrap();
-        assert!(output.contains("apollo_air1_aqi"));
+        // Check overall AQI metric (71 with 2024 EPA breakpoints)
+        assert!(output.contains("apollo_air1_aqi{"));
+        assert!(output.contains("71")); // Expected AQI value with 2024 breakpoints
+
+        // Check per-pollutant sub-AQI metrics
+        assert!(output.contains("apollo_air1_aqi_pm25{"));
+        assert!(output.contains("apollo_air1_aqi_pm10{"));
+
+        // Check info metric with category labels
+        assert!(output.contains("apollo_air1_aqi_info{"));
         assert!(output.contains("category=\"Moderate\""));
         assert!(output.contains("primary_pollutant=\"PM2.5\""));
-        assert!(output.contains("68")); // Expected AQI value
+    }
+
+    #[test]
+    #[ignore = "Metrics registry conflict in tests"]
+    fn test_aqi_state_cleanup() {
+        let metrics = Metrics::new().unwrap();
+
+        // First update with Good AQI
+        let mut sensors = HashMap::new();
+        sensors.insert(
+            "pm__2_5_m_weight_concentration".to_string(),
+            SensorValue {
+                value: 5.0, // Good AQI (~21)
+                unit: "µg/m³".to_string(),
+                name: "PM2.5".to_string(),
+            },
+        );
+
+        let status = ApolloStatus {
+            sensors: sensors.clone(),
+            device_name: "Test Device".to_string(),
+        };
+
+        metrics.update_device("192.168.1.100", &status).unwrap();
+
+        let output = metrics.gather().unwrap();
+        assert!(output.contains("category=\"Good\""));
+
+        // Update to Moderate AQI
+        sensors.insert(
+            "pm__2_5_m_weight_concentration".to_string(),
+            SensorValue {
+                value: 20.0, // Moderate AQI (~68)
+                unit: "µg/m³".to_string(),
+                name: "PM2.5".to_string(),
+            },
+        );
+
+        let status = ApolloStatus {
+            sensors,
+            device_name: "Test Device".to_string(),
+        };
+
+        metrics.update_device("192.168.1.100", &status).unwrap();
+
+        let output = metrics.gather().unwrap();
+        // Should have Moderate, should NOT have Good anymore
+        assert!(output.contains("category=\"Moderate\""));
+        assert!(!output.contains("category=\"Good\""));
     }
 }

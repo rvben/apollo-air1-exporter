@@ -27,9 +27,7 @@ pub struct ApolloStatus {
 #[derive(Debug, Clone)]
 pub struct SensorValue {
     pub value: f64,
-    #[allow(dead_code)]
     pub unit: String,
-    #[allow(dead_code)]
     pub name: String,
 }
 
@@ -69,15 +67,13 @@ impl ApolloClient {
             match self.get_sensor(sensor_id).await {
                 Ok(data) => {
                     let unit = extract_unit(&data.state, data.value);
-                    sensors.insert(
-                        sensor_id.to_string(),
-                        SensorValue {
-                            value: data.value,
-                            unit,
-                            name: sensor_name.to_string(),
-                        },
-                    );
-                    debug!("Got {}: {} {}", sensor_name, data.value, data.state);
+                    let sensor = SensorValue {
+                        value: data.value,
+                        unit,
+                        name: sensor_name.to_string(),
+                    };
+                    debug!("Got {}: {} {}", sensor.name, sensor.value, sensor.unit);
+                    sensors.insert(sensor_id.to_string(), sensor);
                 }
                 Err(e) => {
                     debug!("Sensor {} not available: {}", sensor_id, e);
