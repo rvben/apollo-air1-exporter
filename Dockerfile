@@ -1,23 +1,11 @@
-# Build stage - use the target platform's rust image
-FROM rust:1.90-alpine AS builder
+# Minimal runtime-only Dockerfile
+# Binary is provided as the Docker build context
+#
+# Local example:
+#   cargo build --release
+#   docker build -f Dockerfile -t apollo-air1-exporter target/release/
 
-# Install build dependencies
-RUN apk add --no-cache musl-dev
-
-WORKDIR /app
-
-# Copy manifests
-COPY Cargo.toml Cargo.lock ./
-
-# Copy source code
-COPY src ./src
-
-# Build the application for the native platform
-RUN cargo build --release --target $(rustc -vV | sed -n 's/host: //p') && \
-    cp target/$(rustc -vV | sed -n 's/host: //p')/release/apollo-air1-exporter /app/apollo-air1-exporter
-
-# Runtime stage
-FROM alpine:3.22
+FROM alpine:3.24
 
 # OCI labels for GitHub Container Registry
 LABEL org.opencontainers.image.source=https://github.com/rvben/apollo-air1-exporter
@@ -31,11 +19,12 @@ RUN apk add --no-cache ca-certificates
 RUN addgroup -g 1000 exporter && \
     adduser -D -u 1000 -G exporter exporter
 
-# Copy the binary from builder
-COPY --from=builder /app/apollo-air1-exporter /usr/local/bin/apollo-air1-exporter
+# Copy pre-built binary
+COPY apollo-air1-exporter /usr/local/bin/apollo-air1-exporter
 
-# Change ownership
-RUN chown exporter:exporter /usr/local/bin/apollo-air1-exporter
+# Set permissions
+RUN chmod +x /usr/local/bin/apollo-air1-exporter && \
+    chown exporter:exporter /usr/local/bin/apollo-air1-exporter
 
 # Switch to non-root user
 USER exporter

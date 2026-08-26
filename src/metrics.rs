@@ -52,10 +52,10 @@ pub struct Metrics {
     wifi_rssi_dbm: IntGaugeVec,
 
     // Air Quality Index - restructured for proper Prometheus semantics
-    aqi: GaugeVec,                    // Overall AQI value (device, host only)
-    aqi_pm25: GaugeVec,               // PM2.5 sub-AQI
-    aqi_pm10: GaugeVec,               // PM10 sub-AQI
-    aqi_info: GaugeVec,               // Info metric with category/pollutant labels
+    aqi: GaugeVec,      // Overall AQI value (device, host only)
+    aqi_pm25: GaugeVec, // PM2.5 sub-AQI
+    aqi_pm10: GaugeVec, // PM10 sub-AQI
+    aqi_info: GaugeVec, // Info metric with category/pollutant labels
 
     // State tracking for cleaning up stale AQI info metrics
     previous_aqi_state: RwLock<HashMap<(String, String), AqiState>>,
@@ -468,15 +468,24 @@ impl Metrics {
 
         // Set per-pollutant sub-AQIs
         if let Some(pm25_aqi) = result.pm25_aqi {
-            self.aqi_pm25.with_label_values(&[device, host]).set(pm25_aqi);
+            self.aqi_pm25
+                .with_label_values(&[device, host])
+                .set(pm25_aqi);
         }
         if let Some(pm10_aqi) = result.pm10_aqi {
-            self.aqi_pm10.with_label_values(&[device, host]).set(pm10_aqi);
+            self.aqi_pm10
+                .with_label_values(&[device, host])
+                .set(pm10_aqi);
         }
 
         // Set info metric (always value 1)
         self.aqi_info
-            .with_label_values(&[device, host, result.category.as_str(), &result.primary_pollutant])
+            .with_label_values(&[
+                device,
+                host,
+                result.category.as_str(),
+                &result.primary_pollutant,
+            ])
             .set(1.0);
 
         // Update tracked state
