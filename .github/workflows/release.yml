@@ -253,10 +253,10 @@ jobs:
     - name: Extract changelog content
       id: changelog
       run: |
-        VERSION=${GITHUB_REF_NAME#v}
+        VERSION="${GITHUB_REF_NAME#v}"
         # Extract the changelog section for this version
-        awk -v ver="[$VERSION]" '
-          $0 ~ "## \\[" ver "\\]" { found=1; next }
+        awk -v heading="## [$VERSION]" '
+          index($0, heading) == 1 { found=1; next }
           found && /^## \[/ { exit }
           found && !/^$/ { print }
         ' CHANGELOG.md > release_notes.md

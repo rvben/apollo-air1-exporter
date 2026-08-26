@@ -23,6 +23,16 @@ The exporter provides the following metrics (when available on the device):
 - `apollo_air1_pm1_0_ugm3` - PM1.0 particulate matter in µg/m³
 - `apollo_air1_pm2_5_ugm3` - PM2.5 particulate matter in µg/m³
 - `apollo_air1_pm10_0_ugm3` - PM10 particulate matter in µg/m³
+- `apollo_air1_pm_0_3_to_1_ugm3` - PM0.3–1 particulate matter in µg/m³
+- `apollo_air1_pm_1_to_2_5_ugm3` - PM1–2.5 particulate matter in µg/m³
+- `apollo_air1_pm_2_5_to_4_ugm3` - PM2.5–4 particulate matter in µg/m³
+- `apollo_air1_pm_4_to_10_ugm3` - PM4–10 particulate matter in µg/m³
+- `apollo_air1_carbon_monoxide_ppm` - Carbon monoxide concentration in parts per million
+- `apollo_air1_methane_ppm` - Methane concentration in parts per million
+- `apollo_air1_ethanol_ppm` - Ethanol concentration in parts per million
+- `apollo_air1_hydrogen_ppm` - Hydrogen concentration in parts per million
+- `apollo_air1_ammonia_ppm` - Ammonia concentration in parts per million
+- `apollo_air1_nitrogen_dioxide_ppm` - Nitrogen dioxide concentration in parts per million
 - `apollo_air1_voc_index` - Volatile Organic Compounds index
 - `apollo_air1_nox_index` - Nitrogen Oxides index
 - `apollo_air1_temperature_celsius` - Temperature in degrees Celsius

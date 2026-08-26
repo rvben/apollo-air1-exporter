@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.11] - 2026-08-26
+
+### Added
+- Particle-size range metrics for PM0.3–1, PM1–2.5, PM2.5–4, and PM4–10
+- MiCS-4514 gas metrics for carbon monoxide, methane, ethanol, hydrogen, ammonia,
+  and nitrogen dioxide
+
+### Changed
+- Updated Rust dependencies, GitHub Actions, and the Alpine runtime image
+- Reworked releases to build native AMD64 and ARM64 musl binaries and publish
+  multi-architecture container images from those artifacts
+
 ## [0.0.10] - 2025-12-04
 
 ### Fixed
