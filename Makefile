@@ -120,11 +120,7 @@ gh-secrets:
 		gh secret set DOCKER_USERNAME --body "$$DOCKER_USERNAME" && \
 		echo "✓ Set DOCKER_USERNAME" && \
 		gh secret set DOCKER_PASSWORD --body "$$DOCKER_PASSWORD" && \
-		echo "✓ Set DOCKER_PASSWORD" && \
-		if [ ! -z "$$CRATES_IO_TOKEN" ]; then \
-			gh secret set CRATES_IO_TOKEN --body "$$CRATES_IO_TOKEN" && \
-			echo "✓ Set CRATES_IO_TOKEN"; \
-		fi
+		echo "✓ Set DOCKER_PASSWORD"
 	@echo "GitHub secrets deployed successfully!"
 
 # Show available commands
