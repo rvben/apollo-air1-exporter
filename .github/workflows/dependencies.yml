@@ -21,7 +21,9 @@ jobs:
       max-bump: minor
       prepare-command: >-
         rustup toolchain install stable --profile minimal --component clippy,rustfmt &&
-        rustup default stable
+        rustup default stable &&
+        sudo apt-get update &&
+        sudo apt-get install -y musl-tools
       validation-command: make check && make docker-build
       fail-on-blocked: false
       branch: deps/upd

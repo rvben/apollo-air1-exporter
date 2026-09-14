@@ -21,9 +21,31 @@ clean:
 	cargo clean
 	rm -rf target/
 
-# Build Docker image
-docker-build:
-	docker build -t apollo-air1-exporter .
+# Static Linux binary for the host CPU, so the image runs on the local Docker engine
+MUSL_TARGET ?= $(shell uname -m | sed 's/^arm64$$/aarch64/')-unknown-linux-musl
+DOCKER_CONTEXT := target/docker-context
+
+# On macOS, cross-link with the musl-cross toolchain (brew install musl-cross)
+ifeq ($(shell uname -s),Darwin)
+MUSL_CC := $(subst -unknown-linux-musl,-linux-musl-gcc,$(MUSL_TARGET))
+build-musl: export CC_$(subst -,_,$(MUSL_TARGET)) = $(MUSL_CC)
+build-musl: export CARGO_TARGET_$(shell echo '$(MUSL_TARGET)' | tr 'a-z-' 'A-Z_')_LINKER = $(MUSL_CC)
+endif
+
+.PHONY: build-musl
+# Build the static release binary the runtime image copies in
+build-musl:
+	rustup target add $(MUSL_TARGET)
+	cargo build --release --target $(MUSL_TARGET)
+
+# Build and smoke-test the Docker image. The Dockerfile only copies in a pre-built
+# binary, so the build context is a directory holding just that binary, as in CI.
+docker-build: build-musl
+	rm -rf $(DOCKER_CONTEXT)
+	mkdir -p $(DOCKER_CONTEXT)
+	cp target/$(MUSL_TARGET)/release/apollo-air1-exporter $(DOCKER_CONTEXT)/
+	docker build -f Dockerfile -t apollo-air1-exporter $(DOCKER_CONTEXT)
+	docker run --rm apollo-air1-exporter --help >/dev/null
 
 # Build multi-arch Docker image (local)
 docker-buildx:
