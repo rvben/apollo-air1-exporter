@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.13](https://github.com/rvben/apollo-air1-exporter/compare/v0.0.12...v0.0.13) - 2026-09-27
+
+### Fixed
+
+- **deps**: update rustls to 0.23.45 for RUSTSEC-2026-0285 ([cc6c534](https://github.com/rvben/apollo-air1-exporter/commit/cc6c5341a020d786ea22aeaebff54473dd85e9f1))
+- **make**: build the Docker image from a static musl binary ([3bdd952](https://github.com/rvben/apollo-air1-exporter/commit/3bdd952f3a5b688100c794528878f7d76d44dfe8))
+
 ## [0.0.12] - 2026-08-26
 
 ### Fixed
